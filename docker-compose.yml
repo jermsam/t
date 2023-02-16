@@ -1,0 +1,131 @@
+version: "3.9"
+networks:
+  localhost:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 127.0.0.1/24
+  foonet:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.22.1.0/24
+
+services:
+  gateway:
+    build: ./gateway
+    container_name: gateway
+    ports:
+      - "8000:3030"
+    volumes:
+      - ./:/app:go
+      - /app/gateway/node_modules
+    env_file:
+      - ./gateway/.env
+
+  service:
+    build: ./service
+    container_name: service
+    volumes:
+      - ./:/app:ro
+      - /app/service/node_modules
+    env_file:
+      - ./service/.env
+  client:
+    depends_on:
+      - gateway
+    build: ./client
+    container_name: client
+    ports:
+      - 9000:80
+    volumes:
+      - ./:/app:ro
+      - /app/client/node_modules
+    env_file:
+      - ./client/.env
+
+  mongo_rs_1:
+    build:
+      context: ./mongo_rs/
+      dockerfile: Dockerfile
+      target: mongo_rs_1_image
+    restart: always
+    env_file:
+      - ./mongo_rs/.env
+    environment:
+      - CA_PASS=jnjnjnj
+    expose:
+      - 27017
+    networks:
+      foonet:
+        ipv4_address: 172.22.1.13
+    # This works like MAGIC - this allows us to connect inside the network "my_network" FROM THE HOST - because we are creating a closed network we would have to configure a DNS server only to reach it. So very complicated. This option make it easy for us! Check your ip address with ifconfig in Linux and REPLACE "(YOUR MACHINE/SERVER IP)"
+    extra_hosts:
+      - "localhost:127.0.0.1"
+    command:
+      - /bin/sh
+      - -c
+      - mongod --bind_ip 127.0.0.1,172.22.1.13  --replSet my-mongo-set --tlsMode requireTLS --tlsCertificateKeyFile mongo_rs_1.pem --tlsCAFile rs_ca_private.crt  --tlsClusterCAFile mongo_rs_1.pem --clusterAuthMode x509
+#      - mongod --bind_ip 127.0.0.1,172.22.1.13  --replSet my-mongo-set --tlsMode requireTLS --tlsCertificateKeyFile mongo_rs_1.pem --tlsCAFile private_ca.pem --clusterAuthMode x509
+
+  mongo_rs_2:
+    build:
+      context: ./mongo_rs/
+      dockerfile: Dockerfile
+      target: mongo_rs_2_image
+    restart: always
+    env_file:
+      - ./mongo_rs/.env
+    expose:
+      - 27017
+    networks:
+      foonet:
+        ipv4_address: 172.22.1.23
+    command:
+      - /bin/sh
+      - -c
+      - mongod --bind_ip 127.0.0.1,172.22.1.23  --replSet my-mongo-set --tlsMode requireTLS --tlsCertificateKeyFile mongo_rs_2.pem --tlsCAFile rs_ca_private.crt  --tlsClusterCAFile mongo_rs_2.pem --clusterAuthMode x509
+#      - mongod --bind_ip 127.0.0.1,172.22.1.23  --replSet my-mongo-set  --tlsMode requireTLS --tlsCertificateKeyFile mongo_rs_2.pem --tlsCAFile private_ca.pem --clusterAuthMode x509
+
+  mongo_rs_3:
+    build:
+      context: ./mongo_rs/
+      dockerfile: Dockerfile
+      target: mongo_rs_3_image
+    restart: always
+    env_file:
+      - ./mongo_rs/.env
+    expose:
+      - 27017
+    networks:
+      foonet:
+        ipv4_address: 172.22.1.33
+    command:
+      - /bin/sh
+      - -c
+      - mongod --bind_ip 127.0.0.1,172.22.1.33  --replSet my-mongo-set --tlsMode requireTLS --tlsCertificateKeyFile mongo_rs_3.pem --tlsCAFile rs_ca_private.crt  --tlsClusterCAFile mongo_rs_3.pem --clusterAuthMode x509
+#      -  mongod --bind_ip 127.0.0.1,172.22.1.33  --replSet my-mongo-set --tlsMode requireTLS --tlsCertificateKeyFile mongo_rs_3.pem --tlsCAFile private_ca.pem --clusterAuthMode x509
+
+  init_mongo_replicas:
+    build:
+      context: ./mongo_rs/
+      dockerfile: Dockerfile
+      target: mongo_replica_init
+    restart: "no"
+    networks:
+      foonet:
+        ipv4_address: 172.22.1.36
+    depends_on:
+      - mongo_rs_1
+      - mongo_rs_2
+      - mongo_rs_3
+    env_file:
+      - ./mongo_rs/.env
+    command:
+      - /bin/sh
+      - -c
+      - exec /usr/local/bin/rs_init.sh
+
+

@@ -1,0 +1,22 @@
+[req]
+distinguished_name = req_distinguished_name
+req_extensions = v3_req
+default_keyfile = app-client.key
+prompt = no
+[req_distinguished_name]
+C = US
+ST = UTAH
+L = PLEASANT GROVE
+O = JITPOMI
+OU = Jitpomi-Client
+CN = root
+emailAddress = dev@jitpomi.com
+[v3_req]
+keyUsage = keyEncipherment, dataEncipherment
+extendedKeyUsage = serverAuth
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = nmongo_rs_1
+DNS.2 = mongo_rs_2
+DNS.3 = mongo_rs_3
