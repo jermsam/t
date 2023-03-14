@@ -1,4 +1,4 @@
-FROM node:lts-alpine AS server-stage
+FROM node:lts-alpine AS service-stage
 WORKDIR /app/service
 COPY package*.json ./
 

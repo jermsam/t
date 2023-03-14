@@ -3,14 +3,24 @@
    <div class="text-h3 text-primary text-center q-my-lg ">
     Micro Services Demo
    </div>
+
+
     <q-tabs
       v-model="tab"
       class="text-teal"
     >
+
       <q-tab name="signup" icon="mail" label="Signup" />
+
+
       <q-tab name="login" icon="lock" label="Login" />
     </q-tabs>
-    <signup-form :action="tab" v-if="tab"/>
+
+
+    <signup-form :action="tab" v-if="tab" />
+
+
+
     <signup-form-skeleton v-else/>
   </q-page>
 </template>

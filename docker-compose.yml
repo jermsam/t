@@ -20,7 +20,7 @@ services:
     ports:
       - "8000:3030"
     volumes:
-      - ./:/app:go
+      - ./:/app
       - /app/gateway/node_modules
     env_file:
       - ./gateway/.env
@@ -29,7 +29,7 @@ services:
     build: ./service
     container_name: service
     volumes:
-      - ./:/app:ro
+      - ./:/app
       - /app/service/node_modules
     env_file:
       - ./service/.env
@@ -41,7 +41,7 @@ services:
     ports:
       - 9000:80
     volumes:
-      - ./:/app:ro
+      - ./:/app
       - /app/client/node_modules
     env_file:
       - ./client/.env
@@ -61,14 +61,8 @@ services:
     networks:
       foonet:
         ipv4_address: 172.22.1.13
-    # This works like MAGIC - this allows us to connect inside the network "my_network" FROM THE HOST - because we are creating a closed network we would have to configure a DNS server only to reach it. So very complicated. This option make it easy for us! Check your ip address with ifconfig in Linux and REPLACE "(YOUR MACHINE/SERVER IP)"
-    extra_hosts:
-      - "localhost:127.0.0.1"
-    command:
-      - /bin/sh
-      - -c
-      - mongod --bind_ip 127.0.0.1,172.22.1.13  --replSet my-mongo-set --tlsMode requireTLS --tlsCertificateKeyFile mongo_rs_1.pem --tlsCAFile rs_ca_private.crt  --tlsClusterCAFile mongo_rs_1.pem --clusterAuthMode x509
-#      - mongod --bind_ip 127.0.0.1,172.22.1.13  --replSet my-mongo-set --tlsMode requireTLS --tlsCertificateKeyFile mongo_rs_1.pem --tlsCAFile private_ca.pem --clusterAuthMode x509
+    command: mongod --bind_ip 127.0.0.1,172.22.1.13  --replSet mongo-rs --tlsMode requireTLS --tlsCertificateKeyFile mongo_rs_1.pem --tlsCAFile rs_ca_private.crt  --clusterAuthMode x509
+
 
   mongo_rs_2:
     build:
@@ -86,8 +80,9 @@ services:
     command:
       - /bin/sh
       - -c
-      - mongod --bind_ip 127.0.0.1,172.22.1.23  --replSet my-mongo-set --tlsMode requireTLS --tlsCertificateKeyFile mongo_rs_2.pem --tlsCAFile rs_ca_private.crt  --tlsClusterCAFile mongo_rs_2.pem --clusterAuthMode x509
-#      - mongod --bind_ip 127.0.0.1,172.22.1.23  --replSet my-mongo-set  --tlsMode requireTLS --tlsCertificateKeyFile mongo_rs_2.pem --tlsCAFile private_ca.pem --clusterAuthMode x509
+      - exec /usr/local/bin/init.sh
+    command: mongod --bind_ip 127.0.0.1,172.22.1.23  --replSet mongo-rs --tlsMode requireTLS --tlsCertificateKeyFile mongo_rs_2.pem --tlsCAFile rs_ca_private.crt  --clusterAuthMode x509
+
 
   mongo_rs_3:
     build:
@@ -102,11 +97,8 @@ services:
     networks:
       foonet:
         ipv4_address: 172.22.1.33
-    command:
-      - /bin/sh
-      - -c
-      - mongod --bind_ip 127.0.0.1,172.22.1.33  --replSet my-mongo-set --tlsMode requireTLS --tlsCertificateKeyFile mongo_rs_3.pem --tlsCAFile rs_ca_private.crt  --tlsClusterCAFile mongo_rs_3.pem --clusterAuthMode x509
-#      -  mongod --bind_ip 127.0.0.1,172.22.1.33  --replSet my-mongo-set --tlsMode requireTLS --tlsCertificateKeyFile mongo_rs_3.pem --tlsCAFile private_ca.pem --clusterAuthMode x509
+    command: mongod --bind_ip 127.0.0.1,172.22.1.33  --replSet mongo-rs --tlsMode requireTLS --tlsCertificateKeyFile mongo_rs_3.pem --tlsCAFile rs_ca_private.crt  --clusterAuthMode x509
+
 
   init_mongo_replicas:
     build:

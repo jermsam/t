@@ -17,6 +17,7 @@ extendedKeyUsage = serverAuth
 subjectAltName = @alt_names
 
 [alt_names]
-DNS.1 = nmongo_rs_1
+DNS.1 = mongo_rs_1
 DNS.2 = mongo_rs_2
 DNS.3 = mongo_rs_3
+DNS.4 = localhost
